@@ -10,6 +10,9 @@ interface UserAttributes {
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
+  static bulkCreate(arg0: { username: string; password: string; }[], arg1: { individualHooks: boolean; }) {
+    throw new Error('Method not implemented.');
+  }
   public id!: number;
   public username!: string;
   public password!: string;
