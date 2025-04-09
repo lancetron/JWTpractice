@@ -1,24 +1,25 @@
-import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express';
 
-interface JwtPayload {
-  username: string;
+interface AuthenticatedRequest extends Request {
+  user?: { username: string }; // Explicitly allow undefined
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
-
+const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const token = req.headers['authorization']?.split(' ')[1]; // Bearer <token>
   if (!token) {
-    return res.status(401).json({ message: 'Access token is missing or invalid' });
+    res.status(401).json({ message: 'Access token required' });
+    return;
   }
 
-  try {
-    const secret = process.env.JWT_SECRET || 'default_secret';
-    const decoded = jwt.verify(token, secret) as JwtPayload;
-    req.user = { username: decoded.username };
+  jwt.verify(token, process.env.JWT_SECRET as string, (err, user) => {
+    if (err) {
+      res.status(403).json({ message: 'Invalid token' });
+      return;
+    }
+    req.user = user as { username: string }; // Attach user info to the request
     next();
-  } catch (err) {
-    return res.status(403).json({ message: 'Invalid or expired token' });
-  }
+  });
 };
+
+export default authenticateToken;
